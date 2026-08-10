@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Blocked.Menus
 {
-    public class BlockedMenu : KLMenu<PauseMenuAction>
+    public class BlockedMenu : KLMenu<MenuAction>
     {
         public BlockedMenu(Transform container, ModuleList module_list) : base(container, module_list) { }
 

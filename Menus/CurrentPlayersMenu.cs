@@ -1,13 +1,14 @@
-using System.Collections.Generic;
+using System;
+using Controllers;
 using Kitchen;
 using Kitchen.Modules;
-using Kitchen.NetworkSupport;
+using Kitchen.Transports;
 using KitchenLib;
 using UnityEngine;
 
 namespace Blocked.Menus
 {
-    public class CurrentPlayersMenu : KLMenu<PauseMenuAction>
+    public class CurrentPlayersMenu : KLMenu<MenuAction>
     {
         public CurrentPlayersMenu(Transform container, ModuleList module_list) : base(container, module_list) { }
 
@@ -16,20 +17,16 @@ namespace Blocked.Menus
             AddLabel("Select a player to block");
             
             New<SpacerElement>(true);
-            
-            using (List<PlayerInfo>.Enumerator enumerator = Players.Main.All().GetEnumerator())
+
+            foreach (PlayerInfo playerInfo in Players.Main.All())
             {
-                while (enumerator.MoveNext())
+                if (GetSteamTarget(playerInfo, out SteamNetworkTarget target))
                 {
-                    PlayerInfo playerInfo = enumerator.Current;
-                    if (playerInfo.Connection == ConnectionType.Steam)
+                    AddButton($"Block {playerInfo.Name} ({playerInfo.SecondaryName})", delegate
                     {
-                        AddButton("Block " + playerInfo.Name, delegate (int i)
-                        {
-                            ConfirmBlock.confirmedPlayer = playerInfo;
-                            RequestSubMenu(typeof(ConfirmBlock));
-                        }, 0, 1f, 0.2f);
-                    }
+                        ConfirmBlock.confirmedPlayer = playerInfo;
+                        RequestSubMenu(typeof(ConfirmBlock));
+                    });
                 }
             }
 
@@ -40,6 +37,20 @@ namespace Blocked.Menus
             {
                 RequestPreviousMenu();
             }, 0, 1f, 0.2f);
+        }
+
+        private bool GetSteamTarget(PlayerInfo playerInfo, out SteamNetworkTarget target)
+        {
+            target = null;
+            foreach (ValueTuple<SourceIdentifier, NetworkPeerInformation> tuple in Session.NetworkPeers)
+            {
+                if (tuple.Item1 == playerInfo.Identifier && tuple.Item2.Target is SteamNetworkTarget _target)
+                {
+                    target = _target;
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

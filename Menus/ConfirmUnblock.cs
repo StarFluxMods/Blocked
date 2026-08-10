@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Blocked.Menus
 {
-    public class ConfirmUnblock : KLMenu<PauseMenuAction>
+    public class ConfirmUnblock : KLMenu<MenuAction>
     {
         public ConfirmUnblock(Transform container, ModuleList module_list) : base(container, module_list) { }
 

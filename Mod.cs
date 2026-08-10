@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using KitchenLib;
-using KitchenLib.Logging;
 using KitchenMods;
 using System.Reflection;
 using Blocked.Menus;
 using Kitchen;
-using KitchenLib.Event;
+using Kitchen.Transports;
 using KitchenLib.Preferences;
+using KitchenLib.UI.PlateUp.PreferenceMenus;
+using KitchenLib.Utils;
+using KitchenLogger = KitchenLib.Logging.KitchenLogger;
 
 namespace Blocked
 {
@@ -14,18 +16,37 @@ namespace Blocked
     {
         public const string MOD_GUID = "com.starfluxgames.blocked";
         public const string MOD_NAME = "Blocked";
-        public const string MOD_VERSION = "0.1.0";
+        public const string MOD_VERSION = "0.1.1";
         public const string MOD_AUTHOR = "StarFluxGames";
         public const string MOD_GAMEVERSION = ">=1.1.8";
 
         public static KitchenLogger Logger;
         public static PreferenceManager manager;
 
+        public static NetworkRouter networkRouter;
+
         public Mod() : base(MOD_GUID, MOD_NAME, MOD_AUTHOR, MOD_VERSION, MOD_GAMEVERSION, Assembly.GetExecutingAssembly()) { }
 
         protected override void OnInitialise()
         {
             Logger.LogWarning($"{MOD_GUID} v{MOD_VERSION} in use!");
+        }
+
+        private bool GetNetworkRouter(out NetworkRouter networkRouter)
+        {
+            networkRouter = null;
+            RouterManager routerManager = SystemUtils.GetSystem<RouterManager>();
+            if (routerManager == null) return false;
+            if (routerManager.Routers == null) return false;
+            if (routerManager.Routers.Count < 0) return false;
+            foreach (IViewRouter router in routerManager.Routers)
+            {
+                if (router is not NetworkRouter _networkRouter) continue;
+                networkRouter =  _networkRouter;
+                return true;
+            }
+
+            return false;
         }
 
         protected override void OnPostActivate(KitchenMods.Mod mod)
@@ -37,16 +58,13 @@ namespace Blocked
             manager.Load();
             manager.Save();
             
-            ModsPreferencesMenu<PauseMenuAction>.RegisterMenu(MOD_NAME, typeof(PreferenceMenu), typeof(PauseMenuAction));
+            PauseMenuPreferencesesMenu.RegisterMenu(MOD_NAME, typeof(PreferenceMenu));
             
-            Events.PlayerPauseView_SetupMenusEvent += (s, args) =>
-            {
-                args.addMenu.Invoke(args.instance, new object[] { typeof(PreferenceMenu), new PreferenceMenu(args.instance.ButtonContainer, args.module_list) });
-                args.addMenu.Invoke(args.instance, new object[] { typeof(CurrentPlayersMenu), new CurrentPlayersMenu(args.instance.ButtonContainer, args.module_list) });
-                args.addMenu.Invoke(args.instance, new object[] { typeof(BlockedMenu), new BlockedMenu(args.instance.ButtonContainer, args.module_list) });
-                args.addMenu.Invoke(args.instance, new object[] { typeof(ConfirmBlock), new ConfirmBlock(args.instance.ButtonContainer, args.module_list) });
-                args.addMenu.Invoke(args.instance, new object[] { typeof(ConfirmUnblock), new ConfirmUnblock(args.instance.ButtonContainer, args.module_list) });
-            };
+            PauseMenuPreferencesesMenu.RegisterUsableMenu(typeof(PreferenceMenu));
+            PauseMenuPreferencesesMenu.RegisterUsableMenu(typeof(CurrentPlayersMenu));
+            PauseMenuPreferencesesMenu.RegisterUsableMenu(typeof(BlockedMenu));
+            PauseMenuPreferencesesMenu.RegisterUsableMenu(typeof(ConfirmBlock));
+            PauseMenuPreferencesesMenu.RegisterUsableMenu(typeof(ConfirmUnblock));
         }
     }
 }
